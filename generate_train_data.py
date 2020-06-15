@@ -30,7 +30,7 @@ def step2():
         if org == dst:
             fw.write(line.strip() + '\t' + ' '.join(["O"] * len(org)) + '\n')
         else:
-            tmp_labels = ["O"] * (len(org) + 1)
+            tmp_labels = ["O"] * (len(org))
             org_start = 0
             dst_start = 0
             org_end = len(org) - 1
@@ -61,9 +61,9 @@ def step2():
                 if org_diff_len == 2 and dst_diff_len == 1:
                     tmp_labels[org_start] = 'R'
                 elif org_diff_len == 1 and dst_diff_len == 2:
-                    if org == dst[:-1]:
-                        tmp_labels[org_start + 1] = 'M'
-                    else:
+                    # if org == dst[:-1]:
+                    #     tmp_labels[org_start + 1] = 'M'
+                    # else:
                         tmp_labels[org_start] = 'M'
             fw.write(line.strip() + '\t' + ' '.join(tmp_labels) + '\n')
 

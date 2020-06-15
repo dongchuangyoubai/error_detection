@@ -5,6 +5,7 @@ import torch.optim as optim
 
 torch.manual_seed(1)
 
+
 def argmax(vec):
     # return the argmax as a python int
     _, idx = torch.max(vec, 1)
@@ -21,7 +22,8 @@ def log_sum_exp(vec):
     max_score = vec[0, argmax(vec)]
     max_score_broadcast = max_score.view(1, -1).expand(1, vec.size()[1])
     return max_score + \
-        torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
+           torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
+
 
 class BiLSTM_CRF(nn.Module):
 
@@ -163,19 +165,32 @@ class BiLSTM_CRF(nn.Module):
         score, tag_seq = self._viterbi_decode(lstm_feats)
         return score, tag_seq
 
+
+
 START_TAG = "<START>"
 STOP_TAG = "<STOP>"
 EMBEDDING_DIM = 5
 HIDDEN_DIM = 4
 
 # Make up some training data
-training_data = [(
-    "the wall street journal reported today that apple corporation made money".split(),
-    "B I I I O O O B I O O".split()
-), (
-    "georgia tech is a university in georgia".split(),
-    "B I O O O O B".split()
-)]
+# training_data = [(
+#     "the wall street journal reported today that apple corporation made money".split(),
+#     "B I I I O O O B I O O".split()
+# ), (
+#     "georgia tech is a university in georgia".split(),
+#     "B I O O O O B".split()
+# )]
+training_data = []
+fr = open('train_data_with_label', 'r', encoding='utf-8')
+for line in fr.readlines():
+    line_list = line.strip().split('\t')
+    # print(line_list)
+    if len(line_list) != 3:
+        continue
+    training_data.append((list(line_list[0]), line_list[2].split()))
+    # break
+
+# print(training_data[0])
 
 word_to_ix = {}
 for sentence, tags in training_data:
@@ -183,7 +198,9 @@ for sentence, tags in training_data:
         if word not in word_to_ix:
             word_to_ix[word] = len(word_to_ix)
 
-tag_to_ix = {"B": 0, "I": 1, "O": 2, START_TAG: 3, STOP_TAG: 4}
+# print(word_to_ix)
+
+tag_to_ix = {"O": 0, "M": 1, "S": 2, "R": 3, "W": 4, START_TAG: 5, STOP_TAG: 6}
 
 model = BiLSTM_CRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
 optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
@@ -219,3 +236,4 @@ for epoch in range(
 with torch.no_grad():
     precheck_sent = prepare_sequence(training_data[0][0], word_to_ix)
     print(model(precheck_sent))
+# We got it!
