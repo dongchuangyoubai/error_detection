@@ -2,6 +2,7 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
+import random
 
 torch.manual_seed(1)
 
@@ -169,8 +170,8 @@ class BiLSTM_CRF(nn.Module):
 
 START_TAG = "<START>"
 STOP_TAG = "<STOP>"
-EMBEDDING_DIM = 5
-HIDDEN_DIM = 4
+EMBEDDING_DIM = 128
+HIDDEN_DIM = 128
 
 # Make up some training data
 # training_data = [(
@@ -189,7 +190,7 @@ for line in fr.readlines():
         continue
     training_data.append((list(line_list[0]), line_list[2].split()))
     # break
-
+random.shuffle(training_data)
 # print(training_data[0])
 
 word_to_ix = {}
@@ -203,7 +204,8 @@ for sentence, tags in training_data:
 tag_to_ix = {"O": 0, "M": 1, "S": 2, "R": 3, "W": 4, START_TAG: 5, STOP_TAG: 6}
 
 model = BiLSTM_CRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
-optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
+optimizer = optim.SGD(model.parameters(), lr=0.001, weight_decay=1e-4)
+ExpLR = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
 
 # Check predictions before training
 with torch.no_grad():
@@ -212,9 +214,11 @@ with torch.no_grad():
     print(model(precheck_sent))
 
 # Make sure prepare_sequence from earlier in the LSTM section is loaded
-for epoch in range(
-        300):  # again, normally you would NOT do 300 epochs, it is toy data
+for epoch in range(300):  # again, normally you would NOT do 300 epochs, it is toy data
+    count = 0
+    total_loss = 0
     for sentence, tags in training_data:
+        count += 1
         # Step 1. Remember that Pytorch accumulates gradients.
         # We need to clear them out before each instance
         model.zero_grad()
@@ -226,11 +230,16 @@ for epoch in range(
 
         # Step 3. Run our forward pass.
         loss = model.neg_log_likelihood(sentence_in, targets)
-
+        total_loss += loss
         # Step 4. Compute the loss, gradients, and update the parameters by
         # calling optimizer.step()
         loss.backward()
         optimizer.step()
+        if count % 1000 == 0:
+            print("epoch[%d], step[%d]: avg loss: %f" % (epoch, count, float(total_loss)/count))
+
+    ExpLR.step()
+
 
 # Check predictions after training
 with torch.no_grad():

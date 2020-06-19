@@ -68,11 +68,19 @@ def step2():
             fw.write(line.strip() + '\t' + ' '.join(tmp_labels) + '\n')
 
 
-
+def step3():
+    fr = open('train_data_with_label', 'r', encoding='utf8')
+    fw = open('train_data_label', 'w', encoding='utf8')
+    for line in fr.readlines():
+        line_list = line.strip().split('\t')
+        if len(line_list) != 3:
+            continue
+        fw.write(line_list[0] + '\t' + line_list[2] + '\n')
 
 if __name__ == '__main__':
     # step1 filter pure chinese char
     # step1()
 
     # mark label
-    step2()
+    #step2()
+    step3()
